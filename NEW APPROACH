@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec  2 14:33:04 2020
+
+@author: kaloso
+"""
+
+import random 
+import numpy as np 
+import pandas as pd
+import matplotlib.pyplot as plt 
+from sklearn.preprocessing import StandardScaler
+from IPython.display import display
+from sklearn.cluster import KMeans 
+from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.metrics import homogeneity_score, completeness_score, \
+v_measure_score, adjusted_rand_score, adjusted_mutual_info_score, silhouette_score
+import seaborn as sns
+from sklearn import preprocessing
+import matplotlib.pyplot as plt
+import matplotlib.cbook as cbook
+from matplotlib import style
+from numpy import asarray
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.datasets import make_classification
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+from sklearn.metrics import pairwise_distances_argmin
+from scipy.stats import chi2_contingency
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import confusion_matrix,zero_one_loss
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn import utils
+import warnings
+from sklearn.metrics import confusion_matrix,classification_report
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.cluster import AgglomerativeClustering
+import scipy.cluster.hierarchy as shc
+from sklearn.preprocessing import normalize
+from sklearn.cluster import OPTICS, cluster_optics_dbscan
+import matplotlib.gridspec as gridspec
+float_formatter = lambda x: "%.3f" % x
+np.set_printoptions(formatter={'float_kind':float_formatter})
+from sklearn.datasets.samples_generator import make_circles
+from sklearn.cluster import SpectralClustering, KMeans
+from sklearn.metrics import pairwise_distances
+from matplotlib import pyplot as plt
+import networkx as nx
+from pandas.plotting import scatter_matrix
+from scipy.cluster.hierarchy import linkage, fcluster
+from sklearn import preprocessing, decomposition
+from matplotlib.collections import LineCollection
+import time
+import operator
+from scipy.spatial.distance import pdist
+from scipy.spatial.distance import squareform
+
+import math
+#from functions import *
+sns.set()
+
+df = pd.read_csv("Documents/MEng Research/A Survey on Addiction (Responses) - Original2.csv",sep=",")
+df.drop('Timestamp',axis=1,inplace=True)
+df.drop('Sex',axis=1,inplace=True)
+
+df['Q1'].replace (['Everyday','Once week','Twice a week','Twice a day'],[3,1,2,4],inplace=True)
+df['Q2'].replace (['Yes','No','Not really'],[4,1,2.5],inplace=True)
+df['Q3'].replace (['Yes','No','Not sure'],[4,1,2.5],inplace=True)
+df['Q4'].replace (['Does not matter','More than three','Two to three','Alone'],[1,2,3,4],inplace=True)
+df['Q5'].replace (['Many','10 more','Five more','Three more'],[1,2,3,4],inplace=True)
+df['Q6'].replace (['Many','Around 10','Three to Five','One or two'],[1,2,3,4],inplace=True)
+df['Q7'].replace (['Yes','No','Not really'],[4,1,2.5],inplace=True)
+df['Q8'].replace (['Yes','No','Manageable'],[4,1,2.5],inplace=True)
+df['Q9'].replace (['No, I keep it to myself','Close friends and family only','Selected few','Everybody knows about it'],[4,3,2,1],inplace=True)
+
+
+#print(df.sample(5))
+
+#print('Shape of the data set: ' + str(df.shape))
+
+Labels = df['AD']
+drop = df.drop(['AD'],axis=1,inplace=True)
+Labels_keys = Labels.unique().tolist()
+Labels = np.array(Labels)
+#print('Activity labels: ' + str(Labels_keys))
+
+#normalize the dataset
+data_scale = normalize(df)
+Data_scaled = pd.DataFrame(data_scale, columns=df.columns)
+
+scaler = StandardScaler()
+Data = scaler.fit_transform(df)
+#Data = Data.reshape(1,-1)
+
+#check the optimal k value
+ks = range(1, 10)
+inertias = []
+
+# for k in ks:
+#     model = KMeans(n_clusters=k)
+#     model.fit(Data)
+#     inertias.append(model.inertia_)
+
+# plt.figure(figsize=(8,5))
+# plt.style.use('bmh')
+# plt.plot(ks, inertias, '-o')
+# plt.xlabel('Number of clusters, k')
+# plt.ylabel('Inertia')
+# plt.xticks(ks)
+# plt.show()
+
+def k_means(n_clust, data_frame, true_labels):
+    """
+    Function k_means applies k-means clustering alrorithm on dataset and prints the crosstab of cluster and actual labels 
+    and clustering performance parameters.
+    
+    Input:
+    n_clust - number of clusters (k value)
+    data_frame - dataset we want to cluster
+    true_labels - original labels
+    
+    Output:
+    1 - crosstab of cluster and actual labels
+    2 - performance table
+    """
+    k_means = KMeans(n_clusters = n_clust, random_state=123, n_init=30)
+    global me
+    me=k_means.fit(data_frame)
+    global c_labels
+    c_labels = k_means.labels_
+    df_cluster = pd.DataFrame({'clust_label': c_labels, 'orig_label': true_labels.tolist()})
+    ct = pd.crosstab(df_cluster['clust_label'], df_cluster['orig_label'])
+    y_clust = k_means.predict(data_frame)
+    display(ct)
+    print('% 9s' % 'inertia  homo ') #  compl   v-meas   ARI     AMI     silhouette')
+    print('%i   %.3f   ' #%.3f   %.3f   %.3f   %.3f    %.3f'
+      %(k_means.inertia_,
+      homogeneity_score(true_labels, y_clust)))
+      #completeness_score(true_labels, y_clust),
+      #v_measure_score(true_labels, y_clust),
+      #adjusted_rand_score(true_labels, y_clust),
+      #adjusted_mutual_info_score(true_labels, y_clust),
+      #silhouette_score(data_frame, y_clust, metric='euclidean')))
+      
+cluster=k_means(n_clust=4, data_frame=Data, true_labels=Labels)
+
+pca = PCA(random_state=123)
+pca.fit(Data_scaled)
+features = range(pca.n_components_)
+
+# plt.figure(figsize=(8,4))
+# plt.bar(features[:15], pca.explained_variance_[:15], color='lightskyblue')
+# plt.xlabel('PCA feature')
+# plt.ylabel('Variance')
+# plt.xticks(features[:15])
+# plt.show()
+
+
+def pca_transform(n_comp):
+    pca = PCA(n_components=n_comp, random_state=123)
+    global Data_reduced
+    Data_reduced = pca.fit_transform(Data_scaled)
+    #print('Shape of the new Data df: ' + str(Data_reduced.shape))
+    
+pca_transform(n_comp=2)    
+    
+    
+# pca = PCA(n_components=2,random_state=123)
+# principal_comp = pca.fit_transform(Data_reduced)
+# pca_df = pd.DataFrame(data=principal_comp,columns=['pca1','pca2'])
+# pca_df2 = pd.concat([pca_df,pd.DataFrame({'cluster':c_labels})],axis=1)
+
+# fig = plt.figure(figsize=(12,8))
+# ax = sns.scatterplot(x="pca1",y="pca2",hue='cluster',data=pca_df2,palette=['red','green','blue','yellow'])#,'purple','black','pink','orange','maroon'])
+# plt.show()
+
+# ax = data_scaled.plot.scatter(x='Q1',y='Q2',color='DarkBlue')
+# ax2=data_scaled.plot.scatter(x='Q3',y='Q4',color='DarkGreen',ax=ax)
+# ax3=data_scaled.plot.scatter(x='Q5',y='Q6',color='DarkRed',ax=ax2)
+# data_scaled.plot.scatter(x='Q7',y='Q8',color='Black',ax=ax3)
+
+
+
+# plt.figure(figsize=(10, 7))
+# plt.title("Customer Dendograms")
+# dend = shc.dendrogram(shc.linkage(Data_reduced, method='ward'))
+# plt.axhline(y=20, color='r', linestyle='--')
+
+clusters = AgglomerativeClustering(n_clusters=4, affinity='euclidean', linkage='ward')
+y_hc=clusters.fit_predict(Data)
+
+pca = PCA(svd_solver='randomized',random_state=42)
+pca.fit(Data_reduced)
+
+
+# Before applying PCA, each feature should be centered (zero mean) and with unit variance
+scaled_data = StandardScaler().fit(df).transform(df)
+
+pca = PCA(n_components = 2).fit(scaled_data)
+# PCA(copy=True, n_components=2, whiten=False)
+
+x_pca = pca.transform(scaled_data)
+#print(df.shape, x_pca.shape)
+
+percent = pca.explained_variance_ratio_
+#print(percent)
+#print(sum(percent))
+
+def pca_explained(X, threshold):
+    '''
+    prints optimal principal components based on threshold of PCA's explained variance
+
+    Parameters
+    ----------
+    X : dataframe or array
+        of features
+    threshold : float < 1
+        percentage of explained variance as cut off point
+    '''
+
+    # find total no. of features
+    features = X.shape[1]
+    # iterate till total no. of features,
+    # and find total explained variance for each principal component
+    for i in range(2, features):
+        pca = PCA(n_components = i).fit(X)
+        sum_ = pca.explained_variance_ratio_
+        # add all components explained variances
+        percent = sum(sum_)
+        #print('{} components at {:.2f}% explained variance'.format(i, percent*100))
+        if percent > threshold:
+            break
+
+#pca_explained(df, 0.9)
+
+X = df[['Q1', 'Q2',
+       'Q3', 'Q4', 'Q5', 'Q6',
+       'Q7', 'Q8', 'Q9']]
+
+# Standardize the data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Create a hierarchical clustering model
+hiercluster = AgglomerativeClustering(affinity='euclidean', linkage='ward', compute_full_tree=True) 
+
+# Fit the data to the model and determine which clusters each data point belongs to:
+hiercluster.set_params(n_clusters=4)
+clusters = hiercluster.fit_predict(X_scaled) 
+np.bincount(clusters) # count of data points in each cluster
+
+# Add cluster number to the original data
+X_scaled_clustered = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
+X_scaled_clustered['cluster'] = clusters
+
+# Show a dendrogram, just for the smallest cluster
+# sample = X_scaled_clustered[X_scaled_clustered.cluster==1]
+# Z = linkage(sample, 'ward') 
+# names = sample.index 
+# dendo = shc.dendrogram(shc.linkage(sample,'ward'))
+# plt.axhline(y=20, color='r', linestyle='--')
+#plot_dendrogram(Z, names, figsize=(10,20))
+
+# Create a PCA model to reduce our data to 2 dimensions for visualisation
+pca = PCA(n_components=2)
+pca.fit(X_scaled)
+
+# Transfor the scaled data to the new PCA space
+# X_reduced = pca.transform(X_scaled)
+# X_clustered = pd.DataFrame(X_reduced, index=X.index, columns=['pca1','pca2'])
+# X_clustered["cluster"] = clusters
+# fig = plt.figure(figsize=(12,8))
+# axx = sns.scatterplot(x="pca1",y="pca2",hue='cluster',data=X_clustered,palette=['red','green','blue','yellow'])#,'purple','black','pink','orange','maroon'])
+
+
+#OPTICS
+
+optics = OPTICS(min_samples=2)
+cluster_optics = optics.fit_predict(X_scaled)
+
+
+
+def compute_squared_EDM(X):
+  return squareform(pdist(X,metric='euclidean'))
+
+#  
+def plotReachability(data,eps):
+    plt.figure()
+    plt.plot(range(0,len(data)), data)
+    plt.plot([0, len(data)], [eps, eps])
+    plt.show()
+#plotReachability(Data_scaled,2)    
+# Display classified categories
+def plotFeature(data,labels):
+    clusterNum = len(set(labels))
+    fig = plt.figure()
+    scatterColors = ['black', 'blue', 'green', 'yellow', 'red', 'purple', 'orange', 'brown']
+    ax = fig.add_subplot(111)
+    for i in range(-1, clusterNum):
+        colorSytle = scatterColors[i % len(scatterColors)]
+        subCluster = data[np.where(labels == i)]
+        ax.scatter(subCluster[:, 0], subCluster[:, 1], c=colorSytle, s=12)
+    plt.show()
+
+
+def updateSeeds(seeds,core_PointId,neighbours,core_dists,reach_dists,disMat,isProcess):
+    # Get the core distance of the core point core_PointId
+    core_dist=core_dists[core_PointId]
+    # traverse each neighbor point of core_PointId
+    for neighbour in neighbours:
+        # If the neighbor has not been processed, calculate the core distance
+        if(isProcess[neighbour]==-1):
+            # First calculate the reachable distance of the changed point for core_PointId
+            new_reach_dist = max(core_dist, disMat[core_PointId][neighbour])
+            # If the reachable distance has not been calculated, the calculated reachable distance is assigned
+            if(np.isnan(reach_dists[neighbour])):
+                reach_dists[neighbour]=new_reach_dist
+                seeds[neighbour] = new_reach_dist
+            # If the reachable distance has been calculated, whether the interpretation is to be modified
+            elif(new_reach_dist<reach_dists[neighbour]):
+                reach_dists[neighbour] = new_reach_dist
+                seeds[neighbour] = new_reach_dist
+    return seeds
+
+def OPTICS(data,eps=np.inf,minPts=15):
+    # 
+    orders = []
+    disMat = compute_squared_EDM(data)
+    # Get the rows and columns of the data (a total of n data)
+    n, m = data.shape
+    # np.argsort(disMat)[:,minPts-1] Sort by distance Find the index of minPts elements
+    # disMat[np.arange(0,n),np.argsort(disMat)[:,minPts-1]] Calculate the distance of the index of minPts elements
+    temp_core_distances = disMat[np.arange(0,n),np.argsort(disMat)[:,minPts-1]]
+    # Calculate the core distance
+    core_dists = np.where(temp_core_distances <= eps, temp_core_distances, -1)
+    # The reachable distance of each point is undefined
+    reach_dists= np.full((n,), np.nan)
+    # Give the number of the matrix less than minPts to 1, the number greater than minPts is given zero, then 1 represents the sum of each row, and then the index of the core point coordinates
+    core_points_index = np.where(np.sum(np.where(disMat <= eps, 1, 0), axis=1) >= minPts)[0]
+    # Used to identify whether it is processed, not processed, set to -1
+    isProcess = np.full((n,), -1)
+    # traverse all core points
+    for pointId in core_points_index:
+        # If the core point is not classified, use it as a seed point and start looking for the corresponding cluster
+        if (isProcess[pointId] == -1):
+            # Mark the pointId as the current category (ie identified as operational)
+            isProcess[pointId] = 1
+            orders.append(pointId)
+            # Find the eps neighborhood of the seed point and have no classified points, put it into the seed collection
+            neighbours = np.where((disMat[:, pointId] <= eps) & (disMat[:, pointId] > 0) & (isProcess == -1))[0]
+            seeds = dict()
+            seeds=updateSeeds(seeds,pointId,neighbours,core_dists,reach_dists,disMat,isProcess)
+            while len(seeds)>0:
+                nextId = sorted(seeds.items(), key=operator.itemgetter(1))[0][0]
+                del seeds[nextId]
+                isProcess[nextId] = 1
+                orders.append(nextId)
+                # newPoint seed point eps neighborhood (including yourself)
+                # There is no constraint isProcess == -1, because if it is added, this is the core point, it may become a non-core point
+                queryResults = np.where(disMat[:, nextId] <= eps)[0]
+                if len(queryResults) >= minPts:
+                    seeds=updateSeeds(seeds,nextId,queryResults,core_dists,reach_dists,disMat,isProcess)
+                # The cluster has grown and found a category
+    # Return to the reachable list in the dataset, and its reachable distance
+    return orders,reach_dists
+
+def extract_dbscan(data,orders, reach_dists, eps):
+    # Get the rows and columns of the original data
+    n,m=data.shape
+    # reach_dists[orders] Sort the reachable distance of each point according to the ordered list (ie output order)
+    # np.where(reach_dists[orders] <= eps)[0], find the index of the point in the ordered list that is smaller than eps, that is, the index corresponding to the ordered list
+    reach_distIds=np.where(reach_dists[orders] <= eps)[0]
+    # Normally: the value of current should have one more index than the value of pre. If it is larger than one index, it means that it is not a category.
+    pre=reach_distIds[0]-1
+    clusterId=0
+    labels=np.full((n,),-1)
+    for current in reach_distIds:
+        # Normally: the value of current should have one more index than the value of pre. If it is larger than one index, it means that it is not a category.
+        if(current-pre!=1):
+            # +1
+            clusterId=clusterId+1
+        labels[orders[current]]=clusterId
+        pre=current
+    return labels
+start = time.clock()
+orders,reach_dists=OPTICS(Data,np.inf,30)
+end = time.clock()
+print('finish all in %s' % str(end - start))
+labels=extract_dbscan(Data,orders,reach_dists,3)
+plotReachability(reach_dists[orders],3)
+plotFeature(Data,labels)
