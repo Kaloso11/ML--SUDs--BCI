@@ -6,4 +6,3 @@ seaborn
 scipy
 mne
 pywt
-jupyter
